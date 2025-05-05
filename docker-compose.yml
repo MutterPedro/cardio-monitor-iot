@@ -1,0 +1,51 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - '15672:15672' # Management UI port
+      - '15675:15675' # Web MQTT port
+      - '1883:1883' # MQTT port
+      - '5672:5672' # AMQP port
+      - '1885:1885' # MQTT over WebSocket port
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: 123456
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      # - ./data:/var/lib/rabbitmq
+      # - ./log:/var/log/rabbitmq
+      - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  app:
+    build: .
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 1883
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: 123456
+  sensor_emulator:
+    build: .
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 1883
+      RABBITMQ_USER: admin
+      RABBITMQ_PASS: 123456
+    command: sensor_emulator.py
+
+volumes:
+  rabbitmq_data:
+networks:
+  default:
+    name: rabbitmq-net
+    driver: bridge

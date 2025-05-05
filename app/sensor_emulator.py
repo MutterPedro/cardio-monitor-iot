@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 def send_dummy_data(client):
     """Send dummy heart rate data to RabbitMQ"""
     heart_rate = json.dumps({"heart_rate": random.randint(60, 100)})
-    client.publish("metrics/heart_rate", heart_rate)
+    client.publish("/metrics/heart_rate", heart_rate)
 
 if __name__ == "__main__":
     client = mqtt.Client(protocol=mqtt.MQTTv5)

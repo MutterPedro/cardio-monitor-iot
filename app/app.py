@@ -1,46 +1,39 @@
-import os
-import ssl
-import paho.mqtt.client as mqtt
+import logging
+
+from mqtt import initiate_mqtt_tls_session
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 def on_connect(client, userdata, flags, rc, properties=None):
     """Callback function when connected to MQTT broker"""
-    print(f"Connected to RabbitMQ MQTT broker with result code {rc}")
+    logging.info(f"Connected to RabbitMQ MQTT broker with result code: {rc}")
     client.subscribe("/metrics/heart_rate")
 
 def on_message(client, userdata, msg):
     """Callback function when message received"""
-    print(f"Heart Rate: {msg.payload.decode('utf-8')}")
+    logging.info(f"Heart Rate: {msg.payload.decode('utf-8')}")
 
+def on_subscribe(client, userdata, mid, granted_qos, properties=None):
+    logging.info(f"Subscribed with QoS {granted_qos}")
 
 if __name__ == "__main__":
-    # Create MQTT client instance
-    client = mqtt.Client(protocol=mqtt.MQTTv5)
+    client, host, port = initiate_mqtt_tls_session("app_subscriber")
 
     client.on_connect = on_connect
     client.on_message = on_message
-
+    client.on_subscribe = on_subscribe
     try:
-        host = os.environ.get("RABBITMQ_HOST", "localhost")
-        port = int(os.environ.get("RABBITMQ_PORT", 8883))  # Use TLS port
-        user = os.environ.get("RABBITMQ_USER", "guest")
-        password = os.environ.get("RABBITMQ_PASS", "guest")
-        ca_cert = os.environ.get("CA_CERT", "/app/certs/ca.pem")
-
-        print(f"Connecting to RabbitMQ MQTT broker at {host}:{port} with TLS...")
-
-        client.enable_logger()
-        client.username_pw_set(user, password)
-        client.tls_set(ca_certs=ca_cert, cert_reqs=ssl.CERT_REQUIRED)
-        client.connect(host, port, keepalive=60)
-
-        print("Starting MQTT listener...")
+        logging.info("Starting MQTT listener...")
         client.loop_forever()    
     except KeyboardInterrupt:
-        print("Exiting...")
+        logging.info("Exiting...")
     except Exception as e:
-        print(f"Error connecting to MQTT broker: {str(e)}")
+        logging.info(f"Error connecting to MQTT broker: {str(e)}")
     finally:
         client.disconnect()
-        print("Disconnected from MQTT broker")
+        logging.info("Disconnected from MQTT broker")
         client.loop_stop()
-        print("MQTT loop stopped")
+        logging.info("MQTT loop stopped")

@@ -1,0 +1,7 @@
+FROM rabbitmq:3-management
+
+# Set certificates for TLS encryption
+COPY ./certs /etc/rabbitmq/certs
+RUN chown -R rabbitmq:rabbitmq /etc/rabbitmq/certs
+
+

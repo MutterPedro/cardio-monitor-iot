@@ -1,38 +1,40 @@
 import json
-import os
+import logging
 import random
 import time
 
-import paho.mqtt.client as mqtt
+from mqtt import initiate_mqtt_tls_session
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 def send_dummy_data(client):
     """Send dummy heart rate data to RabbitMQ"""
-    heart_rate = json.dumps({"heart_rate": random.randint(60, 100)})
-    client.publish("/metrics/heart_rate", heart_rate)
+    try:
+        heart_rate = json.dumps({"heart_rate": random.randint(60, 100)})
+        logging.info(f"Publishing heart rate: {heart_rate}")
+        client.publish("/metrics/heart_rate", heart_rate)
+    except Exception as e:
+        logging.error(f"Error publishing data: {str(e)}")
 
 if __name__ == "__main__":
-    client = mqtt.Client(protocol=mqtt.MQTTv5)
+    client, host, port = initiate_mqtt_tls_session("sensor_emulator_publisher")
 
+    client.connect_async(host, port)
+
+    logging.info("Starting MQTT publisher...")
+    client.loop_start()
     try:
-        host = os.environ.get("RABBITMQ_HOST", "localhost")
-        port = int(os.environ.get("RABBITMQ_PORT", 1883))
-        user = os.environ.get("RABBITMQ_USER", "guest")
-        password = os.environ.get("RABBITMQ_PASS", "guest")
-
-        client.username_pw_set(user, password)
-        client.connect(host, port, keepalive=60)
-
-        print("Starting MQTT publisher...")
         while True:
-            send_dummy_data(client)
+            if client.is_connected():
+                send_dummy_data(client)
             time.sleep(1)
-            client.loop()
     except KeyboardInterrupt:
-        print("Exiting...")
+        logging.info("Exiting...")
     except Exception as e:
-        print(f"Error connecting to MQTT broker: {str(e)}")
+        logging.error(f"Error connecting to MQTT broker: {str(e)}")
     finally:
         client.disconnect()
-        print("Disconnected from MQTT broker")
-        # client.loop_stop()
-        # print("MQTT loop stopped")
+        logging.info("Disconnected from MQTT broker")

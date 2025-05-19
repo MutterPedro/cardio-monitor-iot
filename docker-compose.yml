@@ -20,7 +20,6 @@ services:
       # - ./data:/var/lib/rabbitmq
       # - ./log:/var/log/rabbitmq
       - ./config/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-      # - ./certs:/etc/rabbitmq/certs:ro
     healthcheck:
       test: ['CMD', 'rabbitmq-diagnostics', 'ping']
       interval: 10s
@@ -28,8 +27,6 @@ services:
       retries: 5
   app:
     build: .
-    # ports:
-    #   - 8080
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -50,6 +47,15 @@ services:
       RABBITMQ_PASS: 123456
     tty: true
     command: sensor_emulator.py
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - '3000:3000'
 
 volumes:
   rabbitmq_data:

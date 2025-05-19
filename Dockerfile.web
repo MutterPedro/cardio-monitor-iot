@@ -1,0 +1,9 @@
+FROM node:22 AS build-env
+COPY ./web /web
+WORKDIR /web
+
+RUN npm ci --legacy-peer-deps
+
+EXPOSE 3000
+ENTRYPOINT ["npm", "run"]
+CMD ["dev"]

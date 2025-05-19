@@ -6,7 +6,6 @@ COPY ./certs /app/certs
 
 
 FROM gcr.io/distroless/python3
-# EXPOSE 8080
 WORKDIR /app
 COPY --from=build-env /app /app
 

@@ -30,6 +30,8 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    ports:
+      - '4000:4000'
     environment:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 8883
@@ -54,6 +56,8 @@ services:
     depends_on:
       app:
         condition: service_started
+    environment:
+      NEXT_PUBLIC_WS_HEART_RATE_URL: ws://0.0.0.0:4000
     ports:
       - '3000:3000'
 

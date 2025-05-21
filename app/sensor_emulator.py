@@ -1,4 +1,3 @@
-import json
 import logging
 import random
 import time
@@ -13,8 +12,8 @@ logging.basicConfig(
 def send_dummy_data(client):
     """Send dummy heart rate data to RabbitMQ"""
     try:
-        heart_rate = json.dumps({"heart_rate": random.randint(60, 100)})
-        logging.info(f"Publishing heart rate: {heart_rate}")
+        heart_rate = random.randint(60, 100)
+        # logging.info(f"Publishing heart rate: {heart_rate}")
         client.publish("/metrics/heart_rate", heart_rate)
     except Exception as e:
         logging.error(f"Error publishing data: {str(e)}")

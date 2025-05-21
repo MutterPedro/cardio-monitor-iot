@@ -13,8 +13,6 @@ def initiate_mqtt_tls_session(client_id):
     ca_cert = os.environ.get("CA_CERT", "/app/certs/ca.pem")
     server_cert = os.environ.get("SERVER_CERT", "/app/certs/cert.pem")
     client_key = os.environ.get("CLIENT_KEY", "/app/certs/key.pem")
-    
-    print(f"Connecting to RabbitMQ MQTT broker at {host}:{port} with TLS...")
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, protocol=mqtt.MQTTv5, client_id=client_id)
     client.port = port

@@ -31,7 +31,8 @@ async def read_serial_data(port, baudrate):
             logging.info(f"Conectado à porta serial {port} com baudrate {baudrate}")
             while True:
                 if ser.in_waiting > 0:
-                    data = ser.readline().decode('utf-8')
+                    data = ser.readline()
+                    logging.info(f"Data received: {data}")
                     handle_hr(data)
                 await asyncio.sleep(0.1)
     except serial.SerialException as e:

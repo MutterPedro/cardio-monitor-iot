@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from bleak import BleakClient, BleakScanner
-
+import serial
 from mqtt import initiate_mqtt_tls_session
 
 logging.basicConfig(
@@ -11,14 +10,13 @@ logging.basicConfig(
 
 client, host, port = initiate_mqtt_tls_session("sensor_publisher")
 
-
-# UUID do serviço de HR (padrão Bluetooth SIG)
-HR_UUID = "00002a37-0000-1000-8000-00805f9b34fb"
-
-def handle_hr(_, data):
-    hr_value = data[1]
-    logging.info(f"Frequência cardíaca: {hr_value} bpm")
-    send_data(hr_value)
+def handle_hr(data):
+    try:
+        hr_value = int(data.strip())  # Assuming heart rate data is sent as a plain integer
+        logging.info(f"Frequência cardíaca: {hr_value} bpm")
+        send_data(hr_value)
+    except ValueError:
+        logging.error(f"Invalid data received: {data}")
 
 def send_data(heart_rate):
     try:
@@ -27,27 +25,30 @@ def send_data(heart_rate):
     except Exception as e:
         logging.error(f"Error publishing data: {str(e)}")
 
+async def read_serial_data(port, baudrate):
+    try:
+        with serial.Serial(port, baudrate, timeout=1) as ser:
+            logging.info(f"Conectado à porta serial {port} com baudrate {baudrate}")
+            while True:
+                if ser.in_waiting > 0:
+                    data = ser.readline().decode('utf-8')
+                    handle_hr(data)
+                await asyncio.sleep(0.1)
+    except serial.SerialException as e:
+        logging.error(f"Erro ao acessar a porta serial: {str(e)}")
+
 async def main():
     global client, host, port
     client.connect_async(host, port)
 
     logging.info("Starting MQTT publisher...")
     client.loop_start()
-    
-    logging.info("Procurando dispositivos BLE...")
-    devices = await BleakScanner.discover()
-    for d in devices:
-        logging.info(f"{d.name} - {d.address}")
 
-    # Substitua com o endereço do seu Polar H10
-    address = "A0:9E:1A:B0:11:73"
-    # address = input("Digite o endereço do dispositivo Polar H10: ").strip()
+    # Configure the serial port and baudrate
+    serial_port = "/dev/ttyUSB0"  # Replace with your serial port
+    baudrate = 9600  # Replace with the baudrate of your device
 
-    async with BleakClient(address) as client:
-        logging.info(f"Conectado a {address}")
-        await client.start_notify(HR_UUID, handle_hr)
-        logging.info("Lendo frequência cardíaca... Pressione Ctrl+C para sair.")
-        while True:
-            await asyncio.sleep(1)
+    logging.info("Lendo dados do cabo serial... Pressione Ctrl+C para sair.")
+    await read_serial_data(serial_port, baudrate)
 
 asyncio.run(main())

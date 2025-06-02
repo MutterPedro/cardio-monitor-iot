@@ -37,7 +37,19 @@ services:
       RABBITMQ_PORT: 8883
       RABBITMQ_USER: admin
       RABBITMQ_PASS: 123456
-  sensor_emulator:
+  # sensor_emulator:
+  #   build: .
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   environment:
+  #     RABBITMQ_HOST: rabbitmq
+  #     RABBITMQ_PORT: 8883
+  #     RABBITMQ_USER: admin
+  #     RABBITMQ_PASS: 123456
+  #   tty: true
+  #   command: sensor_emulator.py
+  sensor:
     build: .
     depends_on:
       rabbitmq:
@@ -47,8 +59,15 @@ services:
       RABBITMQ_PORT: 8883
       RABBITMQ_USER: admin
       RABBITMQ_PASS: 123456
+    privileged: true
+    network_mode: host
+    volumes:
+      - /var/run/dbus:/var/run/dbus
+      - /dev/bluetooth:/dev/bluetooth
+    devices:
+      - /dev/bluetooth:/dev/bluetooth
     tty: true
-    command: sensor_emulator.py
+    command: sensor.py
   web:
     build:
       context: .
